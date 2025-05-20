@@ -92,7 +92,7 @@ func (p *StateManagerProvider[T]) ListPending(
 ) ([]T, error) {
 	var allResources []T
 	offset := 0
-	limit := 1
+	limit := 100
 	for {
 		q := url.Values{
 			"pending":        []string{"true"},
