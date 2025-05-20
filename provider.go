@@ -90,22 +90,40 @@ func (p *StateManagerProvider[T]) ListPending(
 	shardID string,
 	gk resource.GroupKind,
 ) ([]T, error) {
+	var allResources []T
+	offset := 0
+	limit := 1
+	for {
+		q := url.Values{
+			"pending":        []string{"true"},
+			"resource_group": []string{gk.Group},
+			"kind":           []string{gk.Kind},
+			"shard_id":       []string{shardID},
+			"limit":          []string{fmt.Sprintf("%d", limit)},
+			"offset":         []string{fmt.Sprintf("%d", offset)},
+		}
 
-	q := url.Values{
-		"pending":        []string{"true"},
-		"resource_group": []string{gk.Group},
-		"kind":           []string{gk.Kind},
-		"shard_id":       []string{shardID},
+		requestURL := &url.URL{
+			Scheme:   p.baseURL.Scheme,
+			Host:     p.baseURL.Host,
+			Path:     "/api/v1/resources",
+			RawQuery: q.Encode(),
+		}
+
+		var batch []T
+		err := p.do(ctx, http.MethodGet, requestURL, nil, &batch)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch batch at offset %d: %w", offset, err)
+		}
+
+		allResources = append(allResources, batch...)
+		if len(batch) < limit {
+			break
+		}
+		offset += limit
 	}
 
-	var list []T
-	requestURL := &url.URL{
-		Scheme:   p.baseURL.Scheme,
-		Host:     p.baseURL.Host,
-		Path:     "/api/v1/resources",
-		RawQuery: q.Encode(),
-	}
-	return list, p.do(ctx, http.MethodGet, requestURL, nil, &list)
+	return allResources, nil
 }
 
 func (p *StateManagerProvider[T]) Create(ctx context.Context, obj T) (T, error) {

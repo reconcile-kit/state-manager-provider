@@ -3,9 +3,9 @@ package provider
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/reconcile-kit/api/resource"
 	"io"
 	"net/http"
@@ -17,9 +17,11 @@ var (
 	ErrServerErr = errors.New("state-manager: internal error")
 )
 
-type apiError struct {
-	Error string `json:"error"`
-}
+var jsonIter = jsoniter.Config{
+	EscapeHTML:             false,
+	SortMapKeys:            false,
+	ValidateJsonRawMessage: true,
+}.Froze()
 
 func (p *StateManagerProvider[T]) do(
 	ctx context.Context,
@@ -33,7 +35,7 @@ func (p *StateManagerProvider[T]) do(
 
 	var rdr io.Reader
 	if body != nil {
-		j, err := json.Marshal(body)
+		j, err := jsonIter.Marshal(body)
 		if err != nil {
 			return err
 		}
@@ -61,23 +63,18 @@ func (p *StateManagerProvider[T]) do(
 		if out == nil || res.StatusCode == http.StatusNoContent {
 			return nil
 		}
-		return json.NewDecoder(res.Body).Decode(out)
+		return jsonIter.NewDecoder(res.Body).Decode(out)
 	}
-
-	// иначе читаем apiError
-	var apiErr apiError
-	var try interface{}
-	_ = json.NewDecoder(res.Body).Decode(&try)
-
+	errorBody, _ := io.ReadAll(res.Body)
 	switch res.StatusCode {
 	case http.StatusBadRequest:
-		return fmt.Errorf("%w: %s", ErrBadInput, apiErr.Error)
+		return fmt.Errorf("%w: %s", ErrBadInput, errorBody)
 	case http.StatusNotFound:
-		return fmt.Errorf("%w: %s", resource.NotFoundError, apiErr.Error)
+		return fmt.Errorf("%w: %s", resource.NotFoundError, errorBody)
 	case http.StatusConflict:
-		return fmt.Errorf("%w: %s", resource.ConflictError, apiErr.Error)
+		return fmt.Errorf("%w: %s", resource.ConflictError, errorBody)
 	default:
-		return fmt.Errorf("%w: %s (code %d)", ErrServerErr, apiErr.Error, res.StatusCode)
+		return fmt.Errorf("%w: %s (code %d)", ErrServerErr, errorBody, res.StatusCode)
 	}
 }
 
