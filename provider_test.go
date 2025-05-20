@@ -64,6 +64,20 @@ func TestNewStateManagerProvider(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	items, err := provider.ListPending(ctx, "default", resource.GroupKind{Group: "compute.salt.x5.ru", Kind: "port"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(items) != 1 {
+		t.Fatal("List pending error")
+	}
+
+	item := items[0]
+	if item.Name != "vm-port1" {
+		t.Fatal("List pending error")
+	}
+
 	if body.Spec.Flavor != "m1.small" {
 		t.Errorf("Spec.Flavor got %s, want %s", body.Spec.Flavor, "m1.small")
 	}
@@ -121,5 +135,4 @@ func TestNewStateManagerProvider(t *testing.T) {
 	if ok {
 		t.Fatal("exist resource")
 	}
-
 }

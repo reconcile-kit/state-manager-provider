@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"path"
 )
 
 var (
@@ -24,14 +23,13 @@ type apiError struct {
 
 func (p *StateManagerProvider[T]) do(
 	ctx context.Context,
-	method,
-	rel string,
+	method string,
+	rel *url.URL,
 	body any,
 	out any,
 ) error {
 
-	u := *p.baseURL
-	u.Path = path.Join(p.baseURL.Path, rel)
+	u := rel
 
 	var rdr io.Reader
 	if body != nil {
@@ -68,7 +66,8 @@ func (p *StateManagerProvider[T]) do(
 
 	// иначе читаем apiError
 	var apiErr apiError
-	_ = json.NewDecoder(res.Body).Decode(&apiErr)
+	var try interface{}
+	_ = json.NewDecoder(res.Body).Decode(&try)
 
 	switch res.StatusCode {
 	case http.StatusBadRequest:

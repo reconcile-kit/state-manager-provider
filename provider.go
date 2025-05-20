@@ -42,7 +42,12 @@ func (p *StateManagerProvider[T]) Get(
 		url.PathEscape(key.Name),
 	)
 	var out T
-	if err = p.do(ctx, http.MethodGet, rel, nil, &out); err != nil {
+	requestURL := &url.URL{
+		Scheme: p.baseURL.Scheme,
+		Host:   p.baseURL.Host,
+		Path:   rel,
+	}
+	if err = p.do(ctx, http.MethodGet, requestURL, nil, &out); err != nil {
 		if errors.Is(err, resource.NotFoundError) {
 			return out, false, nil
 		}
@@ -69,10 +74,15 @@ func (p *StateManagerProvider[T]) List(ctx context.Context, o resource.ListOpts)
 	if o.ShardID != "" {
 		q.Set("shard_id", o.ShardID)
 	}
-	rel = addQuery(rel, q)
 
 	var list []T
-	return list, p.do(ctx, http.MethodGet, rel, nil, &list)
+	requestURL := &url.URL{
+		Scheme:   p.baseURL.Scheme,
+		Host:     p.baseURL.Host,
+		Path:     rel,
+		RawQuery: q.Encode(),
+	}
+	return list, p.do(ctx, http.MethodGet, requestURL, nil, &list)
 }
 
 func (p *StateManagerProvider[T]) ListPending(
@@ -87,28 +97,48 @@ func (p *StateManagerProvider[T]) ListPending(
 		"kind":           []string{gk.Kind},
 		"shard_id":       []string{shardID},
 	}
-	rel := addQuery("/api/v1/resources", q)
 
 	var list []T
-	return list, p.do(ctx, http.MethodGet, rel, nil, &list)
+	requestURL := &url.URL{
+		Scheme:   p.baseURL.Scheme,
+		Host:     p.baseURL.Host,
+		Path:     "/api/v1/resources",
+		RawQuery: q.Encode(),
+	}
+	return list, p.do(ctx, http.MethodGet, requestURL, nil, &list)
 }
 
 func (p *StateManagerProvider[T]) Create(ctx context.Context, obj T) (T, error) {
 	rel := resourcePathOfCreate(obj)
 	var got T
-	return got, p.do(ctx, http.MethodPost, rel, obj, &got)
+	requestURL := &url.URL{
+		Scheme: p.baseURL.Scheme,
+		Host:   p.baseURL.Host,
+		Path:   rel,
+	}
+	return got, p.do(ctx, http.MethodPost, requestURL, obj, &got)
 }
 
 func (p *StateManagerProvider[T]) Update(ctx context.Context, obj T) (T, error) {
 	rel := resourcePathOf(obj)
 	var got T
-	return got, p.do(ctx, http.MethodPut, rel, obj, &got)
+	requestURL := &url.URL{
+		Scheme: p.baseURL.Scheme,
+		Host:   p.baseURL.Host,
+		Path:   rel,
+	}
+	return got, p.do(ctx, http.MethodPut, requestURL, obj, &got)
 }
 
 func (p *StateManagerProvider[T]) UpdateStatus(ctx context.Context, obj T) (T, error) {
 	rel := resourcePathOf(obj) + "/status"
 	var got T
-	return got, p.do(ctx, http.MethodPut, rel, obj, &got)
+	requestURL := &url.URL{
+		Scheme: p.baseURL.Scheme,
+		Host:   p.baseURL.Host,
+		Path:   rel,
+	}
+	return got, p.do(ctx, http.MethodPut, requestURL, obj, &got)
 }
 
 func (p *StateManagerProvider[T]) Delete(
@@ -124,5 +154,10 @@ func (p *StateManagerProvider[T]) Delete(
 		url.PathEscape(gk.Kind),
 		url.PathEscape(key.Name),
 	)
-	return p.do(ctx, http.MethodDelete, rel, nil, nil)
+	requestURL := &url.URL{
+		Scheme: p.baseURL.Scheme,
+		Host:   p.baseURL.Host,
+		Path:   rel,
+	}
+	return p.do(ctx, http.MethodDelete, requestURL, nil, nil)
 }
