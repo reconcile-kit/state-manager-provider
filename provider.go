@@ -126,37 +126,48 @@ func (p *StateManagerProvider[T]) ListPending(
 	return allResources, nil
 }
 
-func (p *StateManagerProvider[T]) Create(ctx context.Context, obj T) (T, error) {
+func (p *StateManagerProvider[T]) Create(ctx context.Context, obj T) error {
 	rel := resourcePathOfCreate(obj)
-	var got T
 	requestURL := &url.URL{
 		Scheme: p.baseURL.Scheme,
 		Host:   p.baseURL.Host,
 		Path:   rel,
 	}
-	return got, p.do(ctx, http.MethodPost, requestURL, obj, &got)
+	err := p.do(ctx, http.MethodPost, requestURL, obj, &obj)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (p *StateManagerProvider[T]) Update(ctx context.Context, obj T) (T, error) {
+func (p *StateManagerProvider[T]) Update(ctx context.Context, obj T) error {
 	rel := resourcePathOf(obj)
-	var got T
+
 	requestURL := &url.URL{
 		Scheme: p.baseURL.Scheme,
 		Host:   p.baseURL.Host,
 		Path:   rel,
 	}
-	return got, p.do(ctx, http.MethodPut, requestURL, obj, &got)
+	err := p.do(ctx, http.MethodPut, requestURL, obj, &obj)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (p *StateManagerProvider[T]) UpdateStatus(ctx context.Context, obj T) (T, error) {
+func (p *StateManagerProvider[T]) UpdateStatus(ctx context.Context, obj T) error {
 	rel := resourcePathOf(obj) + "/status"
-	var got T
 	requestURL := &url.URL{
 		Scheme: p.baseURL.Scheme,
 		Host:   p.baseURL.Host,
 		Path:   rel,
 	}
-	return got, p.do(ctx, http.MethodPut, requestURL, obj, &got)
+	err := p.do(ctx, http.MethodPut, requestURL, obj, &obj)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (p *StateManagerProvider[T]) Delete(

@@ -2,9 +2,12 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"github.com/reconcile-kit/api/resource"
+	"math/rand"
 	"net/http"
 	"testing"
+	"time"
 )
 
 type ApiResource struct {
@@ -41,13 +44,18 @@ func TestNewStateManagerProvider(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	res := &ApiResource{
+	vmPortName := "test-vm-port1" + fmt.Sprint(rand.Int())
+	shardID := "test-" + fmt.Sprint(rand.Int())
+
+	fmt.Println(vmPortName, shardID)
+
+	body := &ApiResource{
 		Resource: resource.Resource{
 			ResourceGroup: "compute.salt.x5.ru",
 			Kind:          "port",
 			Namespace:     "default",
-			Name:          "vm-port1",
-			ShardID:       "default",
+			Name:          vmPortName,
+			ShardID:       shardID,
 			Annotations:   map[string]string{"revision": "new"},
 			Labels:        map[string]string{"project_id": "1234567"},
 		},
@@ -59,22 +67,26 @@ func TestNewStateManagerProvider(t *testing.T) {
 		Status: Status{},
 	}
 
-	body, err := provider.Create(ctx, res)
+	err = provider.Create(ctx, body)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	items, err := provider.ListPending(ctx, "default", resource.GroupKind{Group: "compute.salt.x5.ru", Kind: "port"})
+	if body.CreatedAt == "" {
+		t.Fatal("Created At should not be empty")
+	}
+
+	items, err := provider.ListPending(ctx, shardID, resource.GroupKind{Group: "compute.salt.x5.ru", Kind: "port"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if len(items) != 1 {
-		t.Fatal("List pending error")
+		t.Fatal("List pending error", len(items))
 	}
 
 	item := items[0]
-	if item.Name != "vm-port1" {
+	if item.Name != vmPortName {
 		t.Fatal("List pending error")
 	}
 
@@ -83,7 +95,7 @@ func TestNewStateManagerProvider(t *testing.T) {
 	}
 
 	body.Labels["test-label"] = "test"
-	body, err = provider.Update(ctx, body)
+	err = provider.Update(ctx, body)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,16 +104,23 @@ func TestNewStateManagerProvider(t *testing.T) {
 	body.Status.DiskSize = 200
 	body.Status.FIP = "192.168.0.14"
 
-	body, err = provider.UpdateStatus(ctx, body)
+	updatedAt := body.UpdatedAt
+	time.Sleep(1 * time.Second)
+
+	err = provider.UpdateStatus(ctx, body)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if updatedAt == body.UpdatedAt {
+		t.Fatal("Updated At should not be updated")
 	}
 
 	if body.Status.Flavor != "m1.small" {
 		t.Errorf("Spec.Flavor got %s, want %s", body.Status.Flavor, "m1.small")
 	}
 
-	body, ok, err := provider.Get(ctx, "default", resource.GroupKind{Group: body.ResourceGroup, Kind: body.Kind}, resource.ObjectKey{
+	body, ok, err := provider.Get(ctx, shardID, resource.GroupKind{Group: body.ResourceGroup, Kind: body.Kind}, resource.ObjectKey{
 		Namespace: body.Namespace,
 		Name:      body.Name,
 	})
@@ -117,7 +136,7 @@ func TestNewStateManagerProvider(t *testing.T) {
 		t.Errorf("Labels got %s, want %s", v, "test")
 	}
 
-	err = provider.Delete(ctx, "default", resource.GroupKind{Group: body.ResourceGroup, Kind: body.Kind}, resource.ObjectKey{
+	err = provider.Delete(ctx, shardID, resource.GroupKind{Group: body.ResourceGroup, Kind: body.Kind}, resource.ObjectKey{
 		Namespace: body.Namespace,
 		Name:      body.Name,
 	})
@@ -125,7 +144,7 @@ func TestNewStateManagerProvider(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	body, ok, err = provider.Get(ctx, "default", resource.GroupKind{Group: body.ResourceGroup, Kind: body.Kind}, resource.ObjectKey{
+	body, ok, err = provider.Get(ctx, shardID, resource.GroupKind{Group: body.ResourceGroup, Kind: body.Kind}, resource.ObjectKey{
 		Namespace: body.Namespace,
 		Name:      body.Name,
 	})
