@@ -30,7 +30,6 @@ func NewStateManagerProvider[T resource.Object[T]](base string, client *http.Cli
 
 func (p *StateManagerProvider[T]) Get(
 	ctx context.Context,
-	shardID string,
 	gk resource.GroupKind,
 	key resource.ObjectKey,
 ) (_ T, found bool, err error) {
@@ -172,7 +171,6 @@ func (p *StateManagerProvider[T]) UpdateStatus(ctx context.Context, obj T) error
 
 func (p *StateManagerProvider[T]) Delete(
 	ctx context.Context,
-	shardID string,
 	gk resource.GroupKind,
 	key resource.ObjectKey,
 ) error {
