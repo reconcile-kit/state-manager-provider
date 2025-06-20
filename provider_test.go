@@ -18,6 +18,10 @@ type ApiResource struct {
 	Status    Status `json:"status"`
 }
 
+func (c *ApiResource) GetGK() resource.GroupKind {
+	return resource.GroupKind{Group: "compute.salt.x5.ru", Kind: "port"}
+}
+
 func (c *ApiResource) DeepCopy() *ApiResource {
 	return resource.DeepCopyStruct(c).(*ApiResource)
 }
@@ -120,7 +124,7 @@ func TestNewStateManagerProvider(t *testing.T) {
 		t.Errorf("Spec.Flavor got %s, want %s", body.Status.Flavor, "m1.small")
 	}
 
-	body, ok, err := provider.Get(ctx, shardID, resource.GroupKind{Group: body.ResourceGroup, Kind: body.Kind}, resource.ObjectKey{
+	body, ok, err := provider.Get(ctx, resource.GroupKind{Group: body.ResourceGroup, Kind: body.Kind}, resource.ObjectKey{
 		Namespace: body.Namespace,
 		Name:      body.Name,
 	})
@@ -136,7 +140,7 @@ func TestNewStateManagerProvider(t *testing.T) {
 		t.Errorf("Labels got %s, want %s", v, "test")
 	}
 
-	err = provider.Delete(ctx, shardID, resource.GroupKind{Group: body.ResourceGroup, Kind: body.Kind}, resource.ObjectKey{
+	err = provider.Delete(ctx, resource.GroupKind{Group: body.ResourceGroup, Kind: body.Kind}, resource.ObjectKey{
 		Namespace: body.Namespace,
 		Name:      body.Name,
 	})
@@ -144,7 +148,7 @@ func TestNewStateManagerProvider(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	body, ok, err = provider.Get(ctx, shardID, resource.GroupKind{Group: body.ResourceGroup, Kind: body.Kind}, resource.ObjectKey{
+	body, ok, err = provider.Get(ctx, resource.GroupKind{Group: body.ResourceGroup, Kind: body.Kind}, resource.ObjectKey{
 		Namespace: body.Namespace,
 		Name:      body.Name,
 	})

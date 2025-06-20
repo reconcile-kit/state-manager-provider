@@ -4,7 +4,7 @@ go 1.24.2
 
 require (
 	github.com/json-iterator/go v1.1.12
-	github.com/reconcile-kit/api v0.0.6
+	github.com/reconcile-kit/api v0.0.13
 )
 
 require (

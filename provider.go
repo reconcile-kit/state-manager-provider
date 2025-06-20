@@ -55,14 +55,14 @@ func (p *StateManagerProvider[T]) Get(
 	return out, true, nil
 }
 
-func (p *StateManagerProvider[T]) List(ctx context.Context, o resource.ListOpts) ([]T, error) {
+func (p *StateManagerProvider[T]) List(ctx context.Context, gk resource.GroupKind, o resource.ListOpts) ([]T, error) {
 	rel := "/api/v1/resources"
 	q := url.Values{}
-	if o.Group != "" {
-		q.Set("resource_group", o.Group)
+	if gk.Group != "" {
+		q.Set("resource_group", gk.Group)
 	}
-	if o.Kind != "" {
-		q.Set("kind", o.Kind)
+	if gk.Kind != "" {
+		q.Set("kind", gk.Kind)
 	}
 	if o.Namespace != "" {
 		q.Set("namespace", o.Namespace)
