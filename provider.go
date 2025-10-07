@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/reconcile-kit/api/resource"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/reconcile-kit/api/resource"
 )
 
 type StateManagerProvider[T resource.Object[T]] struct {
@@ -44,7 +45,7 @@ func (p *StateManagerProvider[T]) Get(
 	requestURL := &url.URL{
 		Scheme: p.baseURL.Scheme,
 		Host:   p.baseURL.Host,
-		Path:   rel,
+		Path:   p.baseURL.Path + rel,
 	}
 	if err = p.do(ctx, http.MethodGet, requestURL, nil, &out); err != nil {
 		if errors.Is(err, resource.NotFoundError) {
@@ -78,7 +79,7 @@ func (p *StateManagerProvider[T]) List(ctx context.Context, gk resource.GroupKin
 	requestURL := &url.URL{
 		Scheme:   p.baseURL.Scheme,
 		Host:     p.baseURL.Host,
-		Path:     rel,
+		Path:     p.baseURL.Path + rel,
 		RawQuery: q.Encode(),
 	}
 	return list, p.do(ctx, http.MethodGet, requestURL, nil, &list)
@@ -105,7 +106,7 @@ func (p *StateManagerProvider[T]) ListPending(
 		requestURL := &url.URL{
 			Scheme:   p.baseURL.Scheme,
 			Host:     p.baseURL.Host,
-			Path:     "/api/v1/resources",
+			Path:     p.baseURL.Path + "/api/v1/resources",
 			RawQuery: q.Encode(),
 		}
 
@@ -130,7 +131,7 @@ func (p *StateManagerProvider[T]) Create(ctx context.Context, obj T) error {
 	requestURL := &url.URL{
 		Scheme: p.baseURL.Scheme,
 		Host:   p.baseURL.Host,
-		Path:   rel,
+		Path:   p.baseURL.Path + rel,
 	}
 	err := p.do(ctx, http.MethodPost, requestURL, obj, &obj)
 	if err != nil {
@@ -145,7 +146,7 @@ func (p *StateManagerProvider[T]) Update(ctx context.Context, obj T) error {
 	requestURL := &url.URL{
 		Scheme: p.baseURL.Scheme,
 		Host:   p.baseURL.Host,
-		Path:   rel,
+		Path:   p.baseURL.Path + rel,
 	}
 	err := p.do(ctx, http.MethodPut, requestURL, obj, &obj)
 	if err != nil {
@@ -160,7 +161,7 @@ func (p *StateManagerProvider[T]) UpdateStatus(ctx context.Context, obj T) error
 	requestURL := &url.URL{
 		Scheme: p.baseURL.Scheme,
 		Host:   p.baseURL.Host,
-		Path:   rel,
+		Path:   p.baseURL.Path + rel,
 	}
 	err := p.do(ctx, http.MethodPut, requestURL, obj, &obj)
 	if err != nil {
@@ -184,7 +185,7 @@ func (p *StateManagerProvider[T]) Delete(
 	requestURL := &url.URL{
 		Scheme: p.baseURL.Scheme,
 		Host:   p.baseURL.Host,
-		Path:   rel,
+		Path:   p.baseURL.Path + rel,
 	}
 	return p.do(ctx, http.MethodDelete, requestURL, nil, nil)
 }

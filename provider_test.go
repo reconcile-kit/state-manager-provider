@@ -3,11 +3,12 @@ package provider
 import (
 	"context"
 	"fmt"
-	"github.com/reconcile-kit/api/resource"
 	"math/rand"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/reconcile-kit/api/resource"
 )
 
 type ApiResource struct {
