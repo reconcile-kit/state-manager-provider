@@ -20,7 +20,7 @@ type ApiResource struct {
 }
 
 func (c *ApiResource) GetGK() resource.GroupKind {
-	return resource.GroupKind{Group: "compute.salt.x5.ru", Kind: "port"}
+	return resource.GroupKind{Group: "compute.data", Kind: "port"}
 }
 
 func (c *ApiResource) DeepCopy() *ApiResource {
@@ -56,7 +56,7 @@ func TestNewStateManagerProvider(t *testing.T) {
 
 	body := &ApiResource{
 		Resource: resource.Resource{
-			ResourceGroup: "compute.salt.x5.ru",
+			ResourceGroup: "compute.data",
 			Kind:          "port",
 			Namespace:     "default",
 			Name:          vmPortName,
@@ -81,7 +81,7 @@ func TestNewStateManagerProvider(t *testing.T) {
 		t.Fatal("Created At should not be empty")
 	}
 
-	items, err := provider.ListPending(ctx, shardID, resource.GroupKind{Group: "compute.salt.x5.ru", Kind: "port"})
+	items, err := provider.ListPending(ctx, shardID, resource.GroupKind{Group: "compute.data", Kind: "port"})
 	if err != nil {
 		t.Fatal(err)
 	}
