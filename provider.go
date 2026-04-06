@@ -74,6 +74,14 @@ func (p *StateManagerProvider[T]) List(ctx context.Context, gk resource.GroupKin
 	if o.ShardID != "" {
 		q.Set("shard_id", o.ShardID)
 	}
+	if len(o.LabelSelectors) != 0 {
+		labelSelectorQuery, err := getLabelSelectorQuery(o.LabelSelectors)
+		if err != nil {
+			return nil, err
+		}
+
+		q.Set("label_selector", labelSelectorQuery)
+	}
 
 	var list []T
 	requestURL := &url.URL{
@@ -83,6 +91,15 @@ func (p *StateManagerProvider[T]) List(ctx context.Context, gk resource.GroupKin
 		RawQuery: q.Encode(),
 	}
 	return list, p.do(ctx, http.MethodGet, requestURL, nil, &list)
+}
+
+func getLabelSelectorQuery(labelSelectors []resource.LabelSelector) (string, error) {
+	labelSelector, err := resource.FormatLabelSelectors(labelSelectors)
+	if err != nil {
+		return "", err
+	}
+
+	return labelSelector, nil
 }
 
 func (p *StateManagerProvider[T]) ListPending(
