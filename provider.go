@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -56,6 +57,7 @@ func (p *StateManagerProvider[T]) Get(
 	return out, true, nil
 }
 
+// List requests one page. A zero Limit uses the server's default page size.
 func (p *StateManagerProvider[T]) List(ctx context.Context, gk resource.GroupKind, o resource.ListOpts) ([]T, error) {
 	rel := "/api/v1/resources"
 	q := url.Values{}
@@ -73,6 +75,12 @@ func (p *StateManagerProvider[T]) List(ctx context.Context, gk resource.GroupKin
 	}
 	if o.ShardID != "" {
 		q.Set("shard_id", o.ShardID)
+	}
+	if o.Limit != 0 {
+		q.Set("limit", strconv.Itoa(o.Limit))
+	}
+	if o.Offset != 0 {
+		q.Set("offset", strconv.Itoa(o.Offset))
 	}
 	if len(o.LabelSelectors) != 0 {
 		labelSelectorQuery, err := getLabelSelectorQuery(o.LabelSelectors)
